@@ -38,17 +38,15 @@ namespace IniProgram
 
         string mainValue; // 유저가 고른 Value
 
+        int keyIndex = new int();
+
+        //
+
         public Test()
         {
             InitializeComponent();
         }
 
-        public class Ini
-        {
-            private string _section = " ";
-            public int _key;
-            private string _value = " ";
-        }
 
         // [ 1. 파일열기 ] //////////////////////////////////////////////////////////////////////////
         private void btn_open_Click(object sender, EventArgs e)
@@ -65,22 +63,22 @@ namespace IniProgram
                 //MessageBox.Show("선택한 파일: " + filePath);
             }
 
-            readFile();
+            allFile = readFile();
+
+            tb_allFile.Text = allFile; // ui에 파일내용 띄우기
+
+            pasingFile(filePath, allFile); // 파일 읽었으니까 이제 파싱
+
 
         }
 
         // [파일읽기]
-        private string[] readFile()
+        private string readFile()
         {
             allFile = File.ReadAllText(filePath); // 변수에 파일내용 다 넣기
-
             lineCount = File.ReadAllLines(filePath).Length; // 파일이 몇줄인지
-            //Console.WriteLine($"줄수:" + lineCount); // for문 돌릴 때 필요함
 
-            tb_allFile.Text = allFile; // ui 표시
-            pasingFile(filePath, allFile);// 파일 읽었으니까 이제 파싱
-
-            return data;
+            return allFile;
         }
 
         // [ 2. 파싱하기 ] //////////////////////////////////////////////////////////////////////////
@@ -93,7 +91,7 @@ namespace IniProgram
             keys = new List<char>(); 
             values = new List<char>();
 
-            data = allFile.Split('\n'); //한줄씩 배열에 저장(인덱스로 꺼내쓰기
+            string[] data = allFile.Split('\n'); //한줄씩 배열에 저장(인덱스로 꺼내쓰기
 
             // 본격 파싱 조건문
             for (int i=0; i<lineCount; i++) // 줄수만큼 반복 (한줄한줄 읽기)
@@ -154,11 +152,11 @@ namespace IniProgram
         {
             string userInputSection = tb_section.Text; // 유저가 검색한 섹션값 저장
             string userInputKey = tb_key.Text;
-            string userInputValue = tb_value.Text;
 
             verifySection(userInputSection);  // 1. 섹션 검사
-            tb_key_TextChanged(sender, e); // 2. 키 검사
+            //tb_key_TextChanged(sender, e); // 2. 키 검사
         }
+        // feed: 섹션이 바뀌면 섹션만 검사해라. 키까지 검사하지말고. 
 
         private void verifySection(string userInputSection) // Value 수정 전, 섹션&키 유효한지 검사하는 함수
         {
@@ -172,7 +170,7 @@ namespace IniProgram
         // ~~~ 키 입력창에 값이 들어왔을 때 ~~~
         private void tb_key_TextChanged(object sender, EventArgs e)
         {
-            tb_value.Clear();
+            //tb_value.Clear();
 
             string userInputSection = tb_section.Text;
             string userInputKey = tb_key.Text;
@@ -180,7 +178,8 @@ namespace IniProgram
             Console.WriteLine($"key 입력 들어옴({tb_key.Text})");
             verifyKey(userInputKey);
 
-            showValue(userInputSection, userInputKey, data);
+            keyIndex = showValue(userInputSection, userInputKey, allFile);
+
         }
 
 
@@ -194,7 +193,7 @@ namespace IniProgram
 
 
         // 유저가 입력한 섹션&key로 value 찾기
-        private void showValue(string userInputSection, string userInputKey, string[] data)
+        private int showValue(string userInputSection, string userInputKey, string allFile)
         {
             // 존재한다면? 밸류값 띄우기
             // A 섹션의 1번 Key의 값은 a 이다.
@@ -205,37 +204,32 @@ namespace IniProgram
             // ini 데이터를 한줄씩 담은 배열 = data
             // 유저가 입력한 섹션이 data에서 몇번째 인덱스인지 찾자
 
-            data = readFile();
+            allFile = readFile();
+            data = allFile.Split('\n'); //한줄씩 배열에 저장(인덱스로 꺼내쓰기
 
             Console.WriteLine($"showValue 들어왔나?");
 
+            // 인덱스번호 저장할 변수들
             int userSectionIndex = new int();
             int userKeyIndex = new int();
             char userValue = new char(); // 나중에 수정하려면 저장해둬야하니 변수 생성
 
-            // Value를 찾으려면 특정 인덱스를 찾아야하니 for문..
-
-            Console.WriteLine($"data 길이: {data.Length}");
-
             // [섹션의 인덱스 찾기]
-            for (int i = 0; i < data.Length+1; i++)
+            for (int i = 0; i < data.Length+1; i++) // Value를 찾으려면 특정 인덱스를 찾아야하니 for문..
             {
                 if (data[i].Contains(userInputSection)) // i번 데이터에 유저가 입력한 세션이 들어있는지?
                 {
                     userSectionIndex = i; // 인덱스번호 저장
                     Console.WriteLine($"섹션 인덱스: {userSectionIndex}");
-                    break; // 저장 후 바로 탈출
+                    break; // 저장 후 바로 탈출 
                 }
             }
-            Console.WriteLine($"유저 인풋 키: {tb_key.Text}");
+            Console.WriteLine($"유저가 입력한 Key: {tb_key.Text}");
 
             // [키의 인덱스]
-            // 섹션 인덱스보다 1~3이 더 큰 범위에 유저가 입력한 key가 있는지?
-            // 2,3번은 왜 여기 안들어오지???
             for (int i = userSectionIndex+1; i < userSectionIndex+4; i++) // 섹션 다음으로 3쌍의 키/값이 있음
             {
                 string mainKey = data[i][0].ToString(); // i번 데이터의 0번째 글자 = key
-                Console.WriteLine($"mainKey: {mainKey}");
 
                 if (mainKey == userInputKey) // 섹션과 같은 인덱스의 key와 유저가 입력한 key가 같으면
                 {
@@ -243,51 +237,103 @@ namespace IniProgram
                     Console.WriteLine($"Key 인덱스: {userKeyIndex}");
 
                     userValue = data[i][2];
-                    Console.WriteLine($"해당 Value값: {userValue}");
+                    //Console.WriteLine($"해당 Value값: {userValue}");
 
-                    mainValue = userValue.ToString(); // string화
-                    tb_value.Text = mainValue;
-                    Console.WriteLine($"최종 Value: {mainValue}");
+                    string mainValues = userValue.ToString(); // string화
 
-                    break;
+                    //break;
                 }
-                break;
+                //break; 브레이크 끄니까 된다!!!!!!!!!
 
             }
+            
+            Console.WriteLine($"최종 Value: {userValue}");
+            tb_value.Text = userValue.ToString(); // ui에 value 띄우기 > 아니 왜 여기서 터짐 ?????
 
-            Console.WriteLine($"탈출했나?\n");
+            return userKeyIndex; // 나중에 밸류 수정하려면 인덱스 필요하니까 반환
         }
 
 
-        // Value 수정하기..
+        // Value 수정하기.. 10/31
         private void tb_value_TextChanged(object sender, EventArgs e)
         {
-            modifyValue();
+            mainValue = tb_value.Text; // 유저가 입력한 value값 저장
+            //modifyValue(); // 지금 이 함수 이상함..
         }
 
         private void modifyValue() // Value 수정하는 함수
         {
-            for (int i = 0; i < sections.Count; i++)
-            {
+            Console.WriteLine($"modify함수 들어왔나?");
+            // 섹션,키는 고정이니까 저장할 필요없고
+            // 밸류값만 저장하면 되겠다.
+            // 수정된 벨류값을 저장할 변수
 
-            }
+            string modifydValues = tb_value.Text;
+
+            // 어차피 위에서 밸류 위치 찾으니까, 이거 재활용하자
+            // 그게 userKeyIndex 임 (어차피 key랑 value랑 같은 위치니까) 
+            // showValue 함수에서 userKeyIndex를 반환하도록 바꾸자 = retrun int
+
+            int userKeyIndex = showValue(tb_section.Text, tb_key.Text, allFile); // 키 인덱스 값 가져오기
+
+            allFile = readFile();
+            data = allFile.Split('\n'); //한줄씩 배열에 저장(인덱스로 꺼내쓰기
+
+            Console.WriteLine($"수정할 인덱스: {userKeyIndex}");
+            Console.WriteLine($"수정할 값: {modifydValues}");
+
+
         }
 
         // 4. 저장하기 //////////////////////////////////////////////////////////////////////////
-        private void saveFile(string filePath, string allFile)
-        {
-            // 특정 요소만 저장하면되니까 for문
-            File.WriteAllText(filePath, allFile); // 지정 파일경로에 저장한 파일을 저장
-        }
-
         private void btn_save_Click(object sender, EventArgs e)
         {
+            stringValue = tb_value.Text; // 유저가 수정한 value값 저장
+            Console.WriteLine($"저장할 값: {stringValue}");
 
+            saveFile(filePath, stringValue);
         }
+
+
+        private void saveFile(string filePath, string stringValue)
+        {
+            data = allFile.Split('\n');
+
+            // 수정
+            data[keyIndex] = data[keyIndex].Replace(data[keyIndex][2], stringValue[0]);
+            data[keyIndex] = data[keyIndex];
+            //data[keyIndex].Replace(data[keyIndex][2], stringValue[0]);
+
+            Console.WriteLine($"기존 값: {data[keyIndex][2]}");
+            Console.WriteLine($"저장된 값: {stringValue[0]}");
+            Console.WriteLine($"수정된 data: {data[keyIndex]}");
+
+            allFile = string.Join("\n", data); // 다시 전체 파일로 합치기
+            Console.WriteLine($"수정된 allFile: {allFile}");
+
+            tb_allFile.Text = allFile; // ui에 수정된 파일내용 띄우기
+
+            StreamWriter sw = new StreamWriter(filePath);
+            sw.WriteLine(allFile);
+            sw.Close();
+
+            MessageBox.Show("파일이 저장되었습니다.");
+
+            // ExternalProcess.Start(); // 이거
+        }
+
+
+        private void clearAll()
+        {
+            tb_section.Clear();
+            tb_key.Clear();
+            tb_value.Clear();
+        }
+
 
         private void btn_clear_Click(object sender, EventArgs e)
         {
-
+            clearAll();
         }
     }
 }
