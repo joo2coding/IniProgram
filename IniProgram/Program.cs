@@ -17,6 +17,8 @@ namespace IniProgram
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new Test());
+
+            // 깃 테스트
         }
     }
 }
